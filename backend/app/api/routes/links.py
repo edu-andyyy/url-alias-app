@@ -2,8 +2,7 @@ from fastapi import APIRouter, status, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
-from app.crud.link import crud_create_link, crud_get_active_user_link_by_orig_url, crud_get_link_by_short_id, \
-    crud_deactivate_link, crud_get_user_links
+from app.crud.link import crud_create_link, crud_get_link_by_short_id, crud_deactivate_link, crud_get_user_links
 from app.exceptions import LinkCreateError, LinkNotFoundError, LinkUpdateError
 from app.models import User, Link
 from app.schemas.link import LinkCreate, LinkResponse, LinkListResponse
@@ -14,7 +13,8 @@ router = APIRouter()
 
 @router.post(
     "/",
-    description="Create a new link. If a link with the same original URL already exists for the user, it returns that link instead.",
+    description="Create a new link.",
+    response_model=LinkResponse,
     status_code=status.HTTP_201_CREATED,
     responses={
         status.HTTP_201_CREATED: {"description": "Link created successfully"},
@@ -28,14 +28,8 @@ def create_link(
         link_in: LinkCreate,
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
-) -> LinkResponse:
+) -> LinkResponse | None:
     base_url: str = str(request.base_url).rstrip("/")
-
-    existing_link: Link | None = crud_get_active_user_link_by_orig_url(db, str(link_in.orig_url), current_user.id)
-    if existing_link is not None:
-        link_data: LinkResponse = LinkResponse.model_validate(existing_link)
-        link_data.short_url = f"{base_url}/{existing_link.short_id}"
-        return link_data
 
     try:
         new_link: Link = crud_create_link(
@@ -57,14 +51,14 @@ def create_link(
             detail=str(e)
         )
 
-    link_data: LinkResponse = LinkResponse.model_validate(new_link)
-    link_data.short_url = f"{base_url}/{new_link.short_id}"
-    return link_data
+    new_link.short_url = f"{base_url}/{new_link.short_id}"
+    return LinkResponse.model_validate(new_link)
 
 
 @router.patch(
     "/{short_id}/deactivate",
     description="Deactivate a link by its short ID.",
+    response_model=LinkResponse,
     status_code=status.HTTP_200_OK,
     responses={
         status.HTTP_200_OK: {"description": "Link deactivated successfully"},
@@ -78,7 +72,7 @@ def deactivate_link(
         short_id: str,
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
-) -> LinkResponse:
+) -> LinkResponse | None:
     base_url: str = str(request.base_url).rstrip("/")
 
     try:
@@ -106,13 +100,13 @@ def deactivate_link(
             detail=str(e)
         )
 
-    link_data: LinkResponse = LinkResponse.model_validate(link)
-    link_data.short_url = f"{base_url}/{link.short_id}"
-    return link_data
+    link.short_url = f"{base_url}/{link.short_id}"
+    return LinkResponse.model_validate(link)
 
 
 @router.get(
     "/",
+    description="Get all links for the current user with optional filters and pagination.",
     response_model=LinkListResponse,
     status_code=status.HTTP_200_OK,
     responses={
@@ -123,10 +117,12 @@ def deactivate_link(
 )
 def read_links(
         request: Request,
+        is_valid: bool | None = Query(None,
+                                      description="Filter current and outdated links. If not provided, all links are returned"),
         is_active: bool | None = Query(None,
-                                       description="Filter links by active status. If not provided, all links are returned"),
+                                       description="Filter active and inactive links. If not provided, all links are returned"),
         page: int = Query(1, ge=1, description="Page number for pagination"),
-        page_size: int = Query(10, ge=1, le=100, description="Page size for pagination (1-100)"),
+        page_size: int = Query(10, ge=1, le=100, description="Page size for pagination"),
         db: Session = Depends(get_db),
         current_user: User = Depends(get_current_user)
 ) -> LinkListResponse:
@@ -136,15 +132,14 @@ def read_links(
 
     links: list[Link]
     total_items: int
-    links, total_items = crud_get_user_links(db, current_user.id, is_active, page_size, offset)
+    links, total_items = crud_get_user_links(db, current_user.id, is_valid, is_active, page_size, offset)
 
     total_pages: int = (total_items + page_size - 1) // page_size
     items = []
 
     for link in links:
-        link_data: LinkResponse = LinkResponse.model_validate(link)
-        link_data.short_url = f"{base_url}/{link.short_id}"
-        items.append(link_data)
+        link.short_url = f"{base_url}/{link.short_id}"
+        items.append(LinkResponse.model_validate(link))
 
     return LinkListResponse(
         page=page,
