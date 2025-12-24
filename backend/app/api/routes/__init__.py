@@ -5,4 +5,4 @@ from app.api.routes.public import router as public_router
 
 main_router = APIRouter()
 main_router.include_router(links_router, prefix="/api/links", tags=["Links 🔗"])
-main_router.include_router(public_router, tags=["Public 🔓"])
+main_router.include_router(public_router, tags=["Public 🧭"])
