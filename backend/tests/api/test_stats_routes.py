@@ -7,6 +7,8 @@ from fastapi.testclient import TestClient
 
 from app.models import User, Link
 from app.schemas.stats import StatsListResponse, StatsResponse
+from tests.fixtures.links import test_links
+from tests.fixtures.user import override_get_current_user
 
 
 def test_read_top_links_stats_default_params(client: TestClient, monkeypatch: pytest.MonkeyPatch):

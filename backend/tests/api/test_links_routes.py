@@ -1,4 +1,4 @@
-from datetime import datetime, timezone, timedelta, tzinfo
+from datetime import datetime, timezone, timedelta
 from typing import Any
 
 import pytest
@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.exceptions import ShortIdGenerationError, LinkCreateError, LinkUpdateError
 from app.models import Link, User
 from tests.fixtures.links import test_links
+from tests.fixtures.user import override_get_current_user
 
 
 def test_create_link_success(client: TestClient, db: Session, test_user: User):
