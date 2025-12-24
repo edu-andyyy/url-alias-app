@@ -2,7 +2,8 @@ from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db, get_current_user
-from app.crud.link import crud_create_link, crud_get_link_by_orig_url_and_user_id, crud_deactivate_link
+from app.crud.link import crud_create_link, crud_get_link_by_orig_url_and_user_id, crud_get_link_by_short_id, \
+    crud_deactivate_link
 from app.exceptions import LinkCreateError, LinkNotFoundError, LinkUpdateError
 from app.models import User, Link
 from app.schemas.link import LinkCreate, LinkResponse
@@ -61,8 +62,8 @@ def create_link(
     responses={
         status.HTTP_200_OK: {"description": "Link deactivated successfully"},
         status.HTTP_401_UNAUTHORIZED: {"description": "Unauthorized (invalid/missing Basic Auth)"},
-        status.HTTP_404_NOT_FOUND: {"description": "Link not found"},
         status.HTTP_403_FORBIDDEN: {"description": "User is inactive"},
+        status.HTTP_404_NOT_FOUND: {"description": "Link not found"},
     }
 )
 def deactivate_link(
@@ -71,7 +72,19 @@ def deactivate_link(
         current_user: User = Depends(get_current_user)
 ) -> LinkResponse:
     try:
-        link: Link | None = crud_deactivate_link(db, short_id)
+        link: Link | None = crud_get_link_by_short_id(db, short_id)
+
+        if link is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Link not found"
+            )
+        if link.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have permission to deactivate this link"
+            )
+        link = crud_deactivate_link(db, short_id)
     except LinkNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
