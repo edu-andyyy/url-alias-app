@@ -46,6 +46,14 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests with coverage
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+          DEFAULT_USER_USERNAME: admin
+          DEFAULT_USER_PASSWORD: admin
         run: |
           pytest --cov=app --cov-report=xml --cov-report=term-missing -v
 
