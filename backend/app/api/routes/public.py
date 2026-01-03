@@ -17,6 +17,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+# Kept as a module-level constant for test compatibility.
+FRONTEND_URL: str = settings.FRONTEND_URL.rstrip("/")
+
+
 def _frontend_base_url(request: Request) -> str:
     forwarded_proto = request.headers.get("x-forwarded-proto")
     forwarded_host = request.headers.get("x-forwarded-host")
@@ -27,7 +31,7 @@ def _frontend_base_url(request: Request) -> str:
         if host:
             return f"{scheme}://{host}".rstrip("/")
 
-    return settings.FRONTEND_URL.rstrip("/")
+    return FRONTEND_URL
 
 
 @router.get(
