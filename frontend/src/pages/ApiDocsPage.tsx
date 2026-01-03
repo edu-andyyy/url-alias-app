@@ -785,7 +785,7 @@ fetch('http://localhost:8000/api/links/', {
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <a
-                  href="http://localhost:8000/docs"
+                  href="http://localhost:8080/docs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-gray-700 rounded-xl font-semibold border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
