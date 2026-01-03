@@ -25,8 +25,8 @@ def test_redirect_active_link(client: TestClient, test_links: list[Link], short_
 
 def test_redirect_nonexistent_link(client: TestClient):
     response = client.get("/doesnotexist", follow_redirects=False)
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json()["detail"] == "Link not found"
+    assert response.status_code == status.HTTP_302_FOUND
+    assert response.headers["location"] == f"{public_module.FRONTEND_URL}/not-found"
 
 
 @pytest.mark.parametrize(
@@ -38,8 +38,8 @@ def test_redirect_nonexistent_link(client: TestClient):
 )
 def test_redirect_inactive_link(client: TestClient, test_links: list[Link], short_id: str):
     response = client.get(f"/{short_id}", follow_redirects=False)
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json()["detail"] == "Link is inactive"
+    assert response.status_code == status.HTTP_302_FOUND
+    assert response.headers["location"] == f"{public_module.FRONTEND_URL}/link-inactive"
 
 
 @pytest.mark.parametrize(
@@ -51,8 +51,8 @@ def test_redirect_inactive_link(client: TestClient, test_links: list[Link], shor
 )
 def test_redirect_expired_link(client: TestClient, test_links: list[Link], short_id: str):
     response = client.get(f"/{short_id}", follow_redirects=False)
-    assert response.status_code == status.HTTP_404_NOT_FOUND
-    assert response.json()["detail"] == "Link has expired"
+    assert response.status_code == status.HTTP_302_FOUND
+    assert response.headers["location"] == f"{public_module.FRONTEND_URL}/link-expired"
 
 
 def test_click_logging_success(monkeypatch: pytest.MonkeyPatch, client: TestClient, test_links: list[Link]):

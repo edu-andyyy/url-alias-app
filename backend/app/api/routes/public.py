@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends
 from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
@@ -15,14 +15,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+FRONTEND_URL = "http://localhost:5173"
+
 
 @router.get(
     "/{short_id}",
     description="Get a link by short ID.",
     status_code=status.HTTP_302_FOUND,
     responses={
-        status.HTTP_302_FOUND: {"description": "Redirects to the original URL"},
-        status.HTTP_404_NOT_FOUND: {"description": "Link not found or inactive/expired"},
+        status.HTTP_302_FOUND: {"description": "Redirects to the original URL or error page"},
     }
 )
 def redirect_to_original(
@@ -32,22 +33,22 @@ def redirect_to_original(
     link: Link | None = crud_get_link_by_short_id(db, short_id)
 
     if link is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Link not found",
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/not-found",
+            status_code=status.HTTP_302_FOUND
         )
 
     if not link.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Link is inactive",
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/link-inactive",
+            status_code=status.HTTP_302_FOUND
         )
 
     now: datetime = datetime.now(timezone.utc)
     if link.expire_at.replace(tzinfo=timezone.utc) <= now:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Link has expired",
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/link-expired",
+            status_code=status.HTTP_302_FOUND
         )
 
     try:
