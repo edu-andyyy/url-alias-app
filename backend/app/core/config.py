@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     DEFAULT_USER_USERNAME: str
     DEFAULT_USER_PASSWORD: str
 
+    FRONTEND_URL: str = "http://localhost:5173"
+
     @property
     def DATABASE_URL_psycopg(self):
         return (
