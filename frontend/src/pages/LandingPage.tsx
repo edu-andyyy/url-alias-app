@@ -347,7 +347,7 @@ const LandingPage: React.FC = () => {
                   Документация API
                 </Link>
                 <a
-                  href="http://localhost:8000/docs"
+                  href="http://localhost:8080/docs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent text-white rounded-xl font-semibold border border-white/20 hover:border-white/40 hover:bg-white/10 transition-all"
