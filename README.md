@@ -252,7 +252,7 @@ url-alias-app/
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/your-username/url-alias-app.git
+   git clone https://github.com/edu-andyy/url-alias-app.git
    cd url-alias-app
    ```
 
